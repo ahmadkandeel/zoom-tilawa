@@ -21,6 +21,16 @@
     </plurals>
     <!-- Appended to the message above when some selected songs were already in the playlist -->
     <string name="skipped_already_in_playlist">%d already in the playlist, skipped.</string>
+    <!-- Selection bar action inside a playlist: remove the selected songs from that playlist -->
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <plurals name="confirm_remove_from_playlist">
+        <item quantity="one">Remove %1$d song from \"%2$s\"? The song file itself is not deleted.</item>
+        <item quantity="other">Remove %1$d songs from \"%2$s\"? The song files themselves are not deleted.</item>
+    </plurals>
+    <plurals name="removed_from_playlist">
+        <item quantity="one">Removed %1$d song from %2$s.</item>
+        <item quantity="other">Removed %1$d songs from %2$s.</item>
+    </plurals>
     <!-- Title of the selection bar when songs are selected, Ex: "3 selected" -->
     <string name="selected_count">%d selected</string>
     <!-- Selection bar action: select every song in the list -->

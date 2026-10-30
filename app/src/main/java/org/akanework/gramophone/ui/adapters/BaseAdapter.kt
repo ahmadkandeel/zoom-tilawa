@@ -132,11 +132,15 @@ abstract class BaseAdapter<T : Any>(
     protected open val canSelect: Boolean
         get() = false
     protected open fun onAddSelectionToPlaylist(items: List<T>, done: () -> Unit) {}
+    protected open val canRemoveSelection: Boolean
+        get() = false
+    protected open fun onRemoveSelection(items: List<T>, done: () -> Unit) {}
     private val selected = LinkedHashSet<T>()
     private var actionMode: ActionMode? = null
     private val selectionCallback = object : ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             mode.menuInflater.inflate(R.menu.selection_menu, menu)
+            menu.findItem(R.id.remove_from_playlist)?.isVisible = canRemoveSelection
             return true
         }
 
@@ -147,6 +151,12 @@ abstract class BaseAdapter<T : Any>(
                 R.id.select_all -> {
                     list?.second?.let { selected.addAll(it) }
                     updateSelectionUi()
+                    return true
+                }
+
+                R.id.remove_from_playlist -> {
+                    val ordered = list?.second?.filter { selected.contains(it) } ?: emptyList()
+                    onRemoveSelection(ordered) { actionMode?.finish() }
                     return true
                 }
 
