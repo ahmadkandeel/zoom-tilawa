@@ -27,6 +27,7 @@ import android.util.Base64
 import androidx.core.content.edit
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackParameters
@@ -63,11 +64,44 @@ class LastPlayedManager(
 
     companion object {
         private const val TAG = "LastPlayedManager"
+        // Resume position per file: positions under this are not saved, and a file that was
+        // stopped within the last RESUME_END_MS counts as finished (starts from 0 next time)
+        private const val RESUME_MIN_MS = 5000L
+        private const val RESUME_END_MS = 5000L
     }
 
     var allowSavingState = true
     private var job: Job? = null
     private val prefs by lazy { context.getSharedPreferences("LastPlayedManager", 0) }
+    // file path (or media id if there is no path) -> last position in ms
+    private val resumePrefs by lazy { context.getSharedPreferences("ResumePositions", 0) }
+
+    private fun resumeKey(item: MediaItem) = item.getFile()?.path ?: item.mediaId
+
+    fun getResumePosition(item: MediaItem): Long? =
+        resumePrefs.getLong(resumeKey(item), -1L).takeIf { it >= 0L }
+
+    /** Remembers where [item] stopped. Under ~5s is not saved; (almost) finished is forgotten. */
+    fun saveResumePosition(item: MediaItem?, positionMs: Long, durationMs: Long,
+                           commit: Boolean = false) {
+        if (item == null || !allowSavingState) return
+        val key = resumeKey(item)
+        if (durationMs > 0 && positionMs >= durationMs - RESUME_END_MS) {
+            resumePrefs.edit(commit = commit) { remove(key) } // finished: start from 0 next time
+        } else if (positionMs >= RESUME_MIN_MS) {
+            resumePrefs.edit(commit = commit) { putLong(key, positionMs) }
+        }
+    }
+
+    /** Saves the position of the file that is currently loaded in the player. */
+    fun saveCurrentResumePosition(commit: Boolean = false) {
+        val item = controller.currentMediaItem ?: return
+        val duration = controller.duration.takeIf { it != C.TIME_UNSET && it > 0 }
+            ?: item.mediaMetadata.durationMs ?: 0L
+        val ended = controller.playbackState == Player.STATE_ENDED
+        saveResumePosition(item, if (ended) duration else controller.currentPosition,
+            duration, commit)
+    }
 
     private fun dumpPlaylist(): MediaItemsWithStartPosition {
         val items = mutableListOf<MediaItem>()
