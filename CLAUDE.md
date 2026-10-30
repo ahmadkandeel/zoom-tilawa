@@ -20,13 +20,21 @@ Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on 
 - Library views: Folders, All tracks, Playlists. Fast search.
 - Playlists: multi-select tracks, then add to a new or existing playlist. Create a playlist from a whole folder.
 
+## User library facts
+- Files are NOT organized in any fixed folder structure.
+- Some files have tags (title, artist/reciter); some do NOT (the user's own voice recordings, files downloaded from the web). So NEVER depend on tags alone, and NEVER ignore tags either: use ALL available info together (tags + file name + folder), and when a tag is missing fall back to the file name.
+- A playlist holds at most 114 tracks, so no performance concern.
+- Principle: the user wants MORE THAN ONE way to organize and find files (by tags, by file name, by folder, by date added, and by manual playlists). Do not remove or replace one with another.
+- Priority: building a playlist and adding to a playlist must be very easy (few taps).
+
 ## Phases
 0. DONE. Rename app to "Zoom Tilawa", change applicationId, set up GitHub Actions APK build.
-1. Playback-speed dialog overhaul + disable StrictMode dialog in debug builds + fixed debug signing key.
-2. Folder browsing + search + clear library layout.
-3. Custom playlists (multi-select, add to new/existing, create from whole folder).
+1. DONE. Playback-speed dialog overhaul + disable StrictMode dialog in debug builds + fixed debug signing key.
+2. Library + search + exit button.
+3. Easy custom playlists (multi-select, add to new/existing, create from whole folder).
 4. Smart grouping by artist/reciter (depends on file tags; fall back to folder/file name; test on my real files first).
 5. Cleanup, permissions audit, icon, v0.1 release.
+AFTER v0.1 (backlog): appear in Android's Share / "Open with" menu for audio files.
 
 ## After each phase
 Tell me in 3 lines: what changed, what to test on my phone, any risk. Mention approximate token usage so I can track my $20 budget.
