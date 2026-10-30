@@ -47,6 +47,7 @@ import android.view.ViewPropertyAnimator
 import android.view.WindowInsets
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -103,8 +104,6 @@ import com.google.android.material.color.DynamicColorsOptions
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.common.util.concurrent.Futures
@@ -783,24 +782,22 @@ class FullBottomSheet
         }
 
         // Text field (percent) kept in sync with a slider. Invalid input is ignored and
-        // shows a hint; it never reaches the player.
+        // shows a hint; it never reaches the player. Plain EditText on purpose: no fancy theming.
         var updatingField = false
         fun percentField(
             slider: Slider, minPercent: Int, maxPercent: Int, onValidValue: (Float) -> Unit
-        ): Pair<TextInputLayout, TextInputEditText> {
-            val layout = TextInputLayout(context).apply {
-                suffixText = "%"
-                layoutParams = LinearLayout.LayoutParams(
-                    96.dpToPx(context), LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-            val field = TextInputEditText(layout.context).apply {
+        ): EditText {
+            val field = EditText(context).apply {
                 inputType = InputType.TYPE_CLASS_NUMBER
                 imeOptions = EditorInfo.IME_ACTION_DONE
                 filters = arrayOf(InputFilter.LengthFilter(3))
+                gravity = Gravity.CENTER
+                setSelectAllOnFocus(true)
                 setText(Math.round(slider.value * 100).toString())
+                layoutParams = LinearLayout.LayoutParams(
+                    64.dpToPx(context), LinearLayout.LayoutParams.WRAP_CONTENT
+                )
             }
-            layout.addView(field)
             fun showSliderValue() {
                 val t = Math.round(slider.value * 100).toString()
                 if (field.text?.toString() != t) {
@@ -810,7 +807,7 @@ class FullBottomSheet
                 }
             }
             slider.addOnChangeListener { _, _, _ ->
-                layout.error = null
+                field.error = null
                 showSliderValue()
             }
             field.addTextChangedListener(object : TextWatcher {
@@ -820,22 +817,22 @@ class FullBottomSheet
                     if (updatingField) return
                     val n = s?.toString()?.trim()?.toIntOrNull()
                     if (n == null || n < minPercent || n > maxPercent) {
-                        layout.error = context.getString(
+                        field.error = context.getString(
                             R.string.tempo_pitch_percent_hint, minPercent, maxPercent
                         )
                     } else {
-                        layout.error = null
+                        field.error = null
                         onValidValue(n / 100f)
                     }
                 }
             })
             field.setOnFocusChangeListener { _, hasFocus ->
-                if (!hasFocus && layout.error != null) {
-                    layout.error = null
+                if (!hasFocus && field.error != null) {
+                    field.error = null
                     showSliderValue() // drop the invalid text, go back to the real value
                 }
             }
-            return layout to field
+            return field
         }
 
         // Tempo changes can drag pitch along, but only when the user ticked the lock box.
@@ -845,8 +842,8 @@ class FullBottomSheet
             pushParams()
         }
 
-        val (tempoFieldLayout, _) = percentField(tempoSlider, 25, 500) { setTempo(it) }
-        val (pitchFieldLayout, pitchField) = percentField(pitchSlider, 50, 200) {
+        val tempoField = percentField(tempoSlider, 25, 500) { setTempo(it) }
+        val pitchField = percentField(pitchSlider, 50, 200) {
             pitchSlider.value = it
             pushParams()
         }
@@ -855,12 +852,9 @@ class FullBottomSheet
             orientation = LinearLayout.HORIZONTAL
             layoutParams = matchWidth()
             for (x in 1..5) {
-                addView(MaterialButton(
-                    context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
-                ).apply {
+                addView(Button(context).apply {
                     text = context.getString(R.string.tempo_quick_button, x)
-                    insetTop = 0
-                    insetBottom = 0
+                    setAllCaps(false)
                     minimumWidth = 0
                     minWidth = 0
                     setPadding(0, 0, 0, 0)
@@ -872,18 +866,18 @@ class FullBottomSheet
             }
         }
 
-        fun sliderRow(slider: Slider, fieldLayout: TextInputLayout) = LinearLayout(context).apply {
+        fun sliderRow(slider: Slider, field: EditText) = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = matchWidth()
             addView(slider)
-            addView(fieldLayout)
+            addView(field)
+            addView(TextView(context).apply { text = "%" })
         }
 
         fun updatePitchEnabled(locked: Boolean) {
             pitchSlider.isEnabled = !locked
             pitchText.isEnabled = !locked
-            pitchFieldLayout.isEnabled = !locked
             pitchField.isEnabled = !locked
         }
         updatePitchEnabled(isLocked)
@@ -895,10 +889,10 @@ class FullBottomSheet
                 48.dpToPx(context), 0
             )
             addView(tempoText)
-            addView(sliderRow(tempoSlider, tempoFieldLayout))
+            addView(sliderRow(tempoSlider, tempoField))
             addView(quickButtons)
             addView(pitchText)
-            addView(sliderRow(pitchSlider, pitchFieldLayout))
+            addView(sliderRow(pitchSlider, pitchField))
             addView(lockCheckbox)
         }
 
