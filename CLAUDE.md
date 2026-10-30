@@ -28,13 +28,18 @@ Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on 
 - Priority: building a playlist and adding to a playlist must be very easy (few taps).
 
 ## Phases
-0. DONE. Rename app to "Zoom Tilawa", change applicationId, set up GitHub Actions APK build.
-1. DONE. Playback-speed dialog overhaul + disable StrictMode dialog in debug builds + fixed debug signing key.
-2. DONE. Library + search + exit menu item + multi-select.
-3. IN PROGRESS. Easy custom playlists (multi-select, add to new/existing, create from whole folder). Exit button also moves to the player screen (next to the collapse arrow); the menu item stays.
-4. Smart grouping by artist/reciter (depends on file tags; fall back to folder/file name; test on my real files first).
-5. Cleanup, permissions audit, icon, v0.1 release.
-AFTER v0.1 (backlog): appear in Android's Share / "Open with" menu for audio files.
+0-2. DONE. Setup (name, app ID, APK build), speed dialog, library/search/selection/exit menu item.
+3. Easy playlists: Exit button on player screen + "Add to playlist" from selection (in progress).
+4. Resume position per file + show current speed on the player screen.
+5. Playlist management: rename, delete, reorder, remove a track.
+6. A-B repeat loop on a track (riskiest: touches player timing).
+7. Bookmarks inside a track, with optional note.
+8. Smart grouping (artist/reciter/name); never assume tags exist, file name is the fallback.
+9. Optional skip-silence (OFF by default; recitation pauses matter) + verify the existing sleep timer works.
+10. Cleanup, permissions audit, icon, release v0.1.
+After v0.1: appear in Android's Share / Open-with menu for audio.
+
+Working rule for every phase: one branch, one PR, GitHub Actions must pass, wait for my approval, smallest change that works.
 
 ## After each phase
 Tell me in 3 lines: what changed, what to test on my phone, any risk. Mention approximate token usage so I can track my $20 budget.
