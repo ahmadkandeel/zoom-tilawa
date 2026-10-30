@@ -50,7 +50,6 @@ import kotlinx.coroutines.runBlocking
 import org.akanework.gramophone.R
 import org.akanework.gramophone.logic.clone
 import org.akanework.gramophone.logic.enableEdgeToEdgePaddingListener
-import org.akanework.gramophone.logic.exitApp
 import org.akanework.gramophone.logic.needsManualSnackBarInset
 import org.akanework.gramophone.logic.updateMargin
 import org.akanework.gramophone.logic.utils.SdScanner
@@ -98,8 +97,7 @@ class ViewPagerFragment : BaseFragment(true) {
                 }
 
                 R.id.exit -> {
-                    activity.getPlayer()?.exitApp()
-                    activity.finishAndRemoveTask()
+                    activity.exitAppCompletely()
                 }
 
                 R.id.equalizer -> {

@@ -84,6 +84,7 @@ import org.akanework.gramophone.BuildConfig
 import org.akanework.gramophone.R
 import org.akanework.gramophone.logic.dpToPx
 import org.akanework.gramophone.logic.enableEdgeToEdgeProperly
+import org.akanework.gramophone.logic.exitApp
 import org.akanework.gramophone.logic.getBooleanStrict
 import org.akanework.gramophone.logic.gramophoneApplication
 import org.akanework.gramophone.logic.hasAudioPermission
@@ -844,6 +845,12 @@ class MainActivity : BaseActivity() {
      *   Returns a media controller.
      */
     fun getPlayer() = controllerViewModel.get()
+
+    /** Stops playback, removes the notification and closes the app (used by every Exit button). */
+    fun exitAppCompletely() {
+        getPlayer()?.exitApp()
+        finishAndRemoveTask()
+    }
 
     inline val reader
         get() = gramophoneApplication.reader
