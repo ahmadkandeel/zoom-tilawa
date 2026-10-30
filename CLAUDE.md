@@ -30,11 +30,14 @@ Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on 
 ## Phases
 0. DONE. Rename app to "Zoom Tilawa", change applicationId, set up GitHub Actions APK build.
 1. DONE. Playback-speed dialog overhaul + disable StrictMode dialog in debug builds + fixed debug signing key.
-2. Library + search + exit button.
-3. Easy custom playlists (multi-select, add to new/existing, create from whole folder).
+2. DONE. Library + search + exit menu item + multi-select.
+3. IN PROGRESS. Easy custom playlists (multi-select, add to new/existing, create from whole folder). Exit button also moves to the player screen (next to the collapse arrow); the menu item stays.
 4. Smart grouping by artist/reciter (depends on file tags; fall back to folder/file name; test on my real files first).
 5. Cleanup, permissions audit, icon, v0.1 release.
 AFTER v0.1 (backlog): appear in Android's Share / "Open with" menu for audio files.
 
 ## After each phase
 Tell me in 3 lines: what changed, what to test on my phone, any risk. Mention approximate token usage so I can track my $20 budget.
+
+## BACKLOG: feature ideas from research, waiting for my choice
+(empty for now)
