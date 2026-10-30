@@ -100,6 +100,10 @@ class SongAdapter(
     override val canSelect: Boolean
         get() = isSubFragment != R.id.songs
 
+    override fun onAddSelectionToPlaylist(items: List<MediaItem>, done: () -> Unit) {
+        mainActivity.addToPlaylistDialog(items, true, done)
+    }
+
     fun getSongList() = list?.second ?: emptyList()
 
     fun getActivity() = mainActivity

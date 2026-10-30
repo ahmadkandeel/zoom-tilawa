@@ -131,6 +131,7 @@ abstract class BaseAdapter<T : Any>(
     // lists behave exactly as before.
     protected open val canSelect: Boolean
         get() = false
+    protected open fun onAddSelectionToPlaylist(items: List<T>, done: () -> Unit) {}
     private val selected = LinkedHashSet<T>()
     private var actionMode: ActionMode? = null
     private val selectionCallback = object : ActionMode.Callback {
@@ -142,10 +143,21 @@ abstract class BaseAdapter<T : Any>(
         override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = false
 
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            if (item.itemId != R.id.select_all) return false
-            list?.second?.let { selected.addAll(it) }
-            updateSelectionUi()
-            return true
+            when (item.itemId) {
+                R.id.select_all -> {
+                    list?.second?.let { selected.addAll(it) }
+                    updateSelectionUi()
+                    return true
+                }
+
+                R.id.add_to_playlist -> {
+                    // Same order as on screen, not tap order
+                    val ordered = list?.second?.filter { selected.contains(it) } ?: emptyList()
+                    onAddSelectionToPlaylist(ordered) { actionMode?.finish() }
+                    return true
+                }
+            }
+            return false
         }
 
         override fun onDestroyActionMode(mode: ActionMode) {

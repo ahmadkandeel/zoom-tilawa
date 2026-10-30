@@ -12,6 +12,15 @@
 
     <!-- If your language uses a latin script: use "Gramophone", please do not translate. If your language uses a different script: translate "Gramophone" into your language. -->
     <string name="app_name">Zoom Tilawa</string>
+    <!-- First row of the add to playlist dialog -->
+    <string name="new_playlist">New playlist…</string>
+    <!-- Message after adding selected songs to a playlist. Ex: "Added 10 songs to Fajr" -->
+    <plurals name="added_to_playlist">
+        <item quantity="one">Added %1$d song to %2$s.</item>
+        <item quantity="other">Added %1$d songs to %2$s.</item>
+    </plurals>
+    <!-- Appended to the message above when some selected songs were already in the playlist -->
+    <string name="skipped_already_in_playlist">%d already in the playlist, skipped.</string>
     <!-- Title of the selection bar when songs are selected, Ex: "3 selected" -->
     <string name="selected_count">%d selected</string>
     <!-- Selection bar action: select every song in the list -->
