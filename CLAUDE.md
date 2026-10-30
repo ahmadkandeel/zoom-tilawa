@@ -16,15 +16,17 @@ Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on 
 - Speed is GLOBAL: choose once (1x/2x/3x/4x/5x), it persists across tracks AND app restarts.
 - Default speed on first launch is 1x (normal). The 1x button must always be available.
 - Speed buttons live on the Now Playing screen.
+- Tempo and pitch are INDEPENDENT. "Lock tempo and pitch" is OFF by default. Locking them together makes fast audio sound like a child, so it must never be the default.
 - Library views: Folders, All tracks, Playlists. Fast search.
 - Playlists: multi-select tracks, then add to a new or existing playlist. Create a playlist from a whole folder.
 
 ## Phases
-0. Rename app to "Zoom Tilawa", change applicationId, set up GitHub Actions APK build.
-1. Speed buttons + persistence + test at 5x.
+0. DONE. Rename app to "Zoom Tilawa", change applicationId, set up GitHub Actions APK build.
+1. Playback-speed dialog overhaul + disable StrictMode dialog in debug builds + fixed debug signing key.
 2. Folder browsing + search + clear library layout.
-3. Playlist workflow (multi-select, from folder).
-4. Cleanup: permissions audit, icon, v0.1 release.
+3. Custom playlists (multi-select, add to new/existing, create from whole folder).
+4. Smart grouping by artist/reciter (depends on file tags; fall back to folder/file name; test on my real files first).
+5. Cleanup, permissions audit, icon, v0.1 release.
 
 ## After each phase
 Tell me in 3 lines: what changed, what to test on my phone, any risk. Mention approximate token usage so I can track my $20 budget.
