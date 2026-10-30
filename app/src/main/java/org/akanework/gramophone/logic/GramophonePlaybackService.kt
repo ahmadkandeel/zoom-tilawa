@@ -826,6 +826,8 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         prefs.unregisterOnSharedPreferenceChangeListener(this)
         // Important: this must happen before sending stop() as that changes state ENDED -> IDLE
         lastPlayedManager.save()
+        handler.removeCallbacks(resumeSaver)
+        lastPlayedManager.saveCurrentResumePosition(commit = true)
         scope.cancel()
         endedWorkaroundPlayer!!.stop()
         handler.removeCallbacks(timer)
@@ -1005,6 +1007,20 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         }
     }
 
+    // Where to continue a file that was played before (null = from the start, or it is
+    // already the file that is playing right now)
+    private fun resumePositionFor(item: MediaItem?): Long? =
+        if (item == null || endedWorkaroundPlayer?.currentMediaItem?.mediaId == item.mediaId) null
+        else lastPlayedManager.getResumePosition(item)
+
+    // Saves the position every few seconds while playing
+    private val resumeSaver = object : Runnable {
+        override fun run() {
+            lastPlayedManager.saveCurrentResumePosition()
+            handler.postDelayed(this, 5000)
+        }
+    }
+
     override fun onCustomCommand(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
@@ -1023,7 +1039,8 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
                 { songList ->
                     if (seamless) {
                         endedWorkaroundPlayer!!.setMediaItemsSeamlessly(songList,
-                            position, null, title, pinned = false, original = true,
+                            position, resumePositionFor(songList.getOrNull(position)),
+                            title, pinned = false, original = true,
                             repeatMode = null, shuffleModeEnabled = null, newShuffleOrder = null,
                             playbackParameters = null, ended = false,
                              )
@@ -1033,7 +1050,8 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
                         val repeatMode = if (customCommand.customExtras.containsKey("repeatMode"))
                             customCommand.customExtras.getInt("repeatMode") else null
                         endedWorkaroundPlayer!!.setMediaItems(songList, startIndex = position,
-                            startPositionMs = C.TIME_UNSET, title, pinned = false, original = true,
+                            startPositionMs = resumePositionFor(songList.getOrNull(position))
+                                ?: C.TIME_UNSET, title, pinned = false, original = true,
                             newShuffleOrder = null, ended = false, repeatMode = repeatMode,
                             shuffleModeEnabled = shuffleModeEnabled, playbackParameters = null)
                     }
@@ -1326,6 +1344,7 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
 
                 SERVICE_EXIT -> {
                     // Exit button: pause, stop the service, which also removes the notification
+                    lastPlayedManager.saveCurrentResumePosition(commit = true)
                     pauseAllPlayersAndStopSelf()
                     SessionResult(SessionResult.RESULT_SUCCESS)
                 }
@@ -1641,6 +1660,18 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
             }
         }
 
+        if (mediaItem != null && (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
+                    || reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK)) {
+            // next/previous/auto-advance/queue tap: continue where this file was left
+            lastPlayedManager.getResumePosition(mediaItem)?.let { pos ->
+                handler.post {
+                    if (endedWorkaroundPlayer?.currentMediaItem?.mediaId == mediaItem.mediaId
+                        && endedWorkaroundPlayer!!.currentPosition < 1500)
+                        endedWorkaroundPlayer!!.seekTo(pos)
+                }
+            }
+        }
+
         lastPlayedManager.save()
     }
 
@@ -1660,6 +1691,9 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         scheduleSendingLyrics(false)
+        handler.removeCallbacks(resumeSaver)
+        lastPlayedManager.saveCurrentResumePosition()
+        if (isPlaying) handler.postDelayed(resumeSaver, 5000)
         lastPlayedManager.save()
     }
 
@@ -1767,6 +1801,14 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         newPosition: Player.PositionInfo,
         reason: Int
     ) {
+        if (oldPosition.mediaItem != null
+            && oldPosition.mediaItem?.mediaId != newPosition.mediaItem?.mediaId) {
+            // switched to another file (next, queue tap, new list): remember where we left
+            lastPlayedManager.saveResumePosition(
+                oldPosition.mediaItem, oldPosition.positionMs,
+                oldPosition.mediaItem?.mediaMetadata?.durationMs ?: 0L
+            )
+        }
         if (lastKnownPeriodUid != newPosition.periodUid || oldPosition.periodUid != newPosition.periodUid) {
             var changed = false
             downstreamFormat.toSet().forEach {
