@@ -269,6 +269,7 @@ class FullBottomSheet
     private val bottomSheetPlaylistButton: MaterialButton
     private val bottomSheetTimerButton: MaterialButton
     private val bottomSheetPlaybackSpeedButton: MaterialButton
+    private val bottomSheetExitButton: MaterialButton
     private val bottomSheetFavoriteButton: MaterialButton
     val bottomSheetLyricButton: MaterialButton
     private val bottomSheetFullSeekBar: SeekBar
@@ -296,6 +297,7 @@ class FullBottomSheet
         bottomSheetLoopButton = findViewById(R.id.sheet_loop)
         bottomSheetTimerButton = findViewById(R.id.timer)
         bottomSheetPlaybackSpeedButton = findViewById(R.id.playback_speed)
+        bottomSheetExitButton = findViewById(R.id.exit)
         bottomSheetFavoriteButton = findViewById(R.id.favor)
         bottomSheetPlaylistButton = findViewById(R.id.playlist)
         bottomSheetLyricButton = findViewById(R.id.lyrics)
@@ -545,6 +547,11 @@ class FullBottomSheet
 
         bottomSheetFullSeekBar.setOnSeekBarChangeListener(touchListener)
         bottomSheetFullSlider.addOnSliderTouchListener(touchListener)
+
+        bottomSheetExitButton.setOnClickListener {
+            ViewCompat.performHapticFeedback(it, HapticFeedbackConstantsCompat.CONTEXT_CLICK)
+            activity.exitAppCompletely()
+        }
 
         bottomSheetFullSlideUpButton.setOnClickListener {
             ViewCompat.performHapticFeedback(it, HapticFeedbackConstantsCompat.CONTEXT_CLICK)
@@ -1364,6 +1371,8 @@ class FullBottomSheet
                         ColorStateList.valueOf(progressColor)
                     bottomSheetFullSlideUpButton.iconTint =
                         ColorStateList.valueOf(progressColor)
+                    bottomSheetExitButton.iconTint =
+                        ColorStateList.valueOf(progressColor)
                 }
                 duration = BACKGROUND_COLOR_TRANSITION_SEC
             }
@@ -1495,6 +1504,8 @@ class FullBottomSheet
             bottomSheetFullPreviousButton.iconTint =
                 ColorStateList.valueOf(colorOnSurface)
             bottomSheetFullSlideUpButton.iconTint =
+                ColorStateList.valueOf(colorOnSurface)
+            bottomSheetExitButton.iconTint =
                 ColorStateList.valueOf(colorOnSurface)
 
             bottomSheetFullPosition.setTextColor(

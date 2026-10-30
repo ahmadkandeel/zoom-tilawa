@@ -84,6 +84,7 @@ import org.akanework.gramophone.BuildConfig
 import org.akanework.gramophone.R
 import org.akanework.gramophone.logic.dpToPx
 import org.akanework.gramophone.logic.enableEdgeToEdgeProperly
+import org.akanework.gramophone.logic.exitApp
 import org.akanework.gramophone.logic.getBooleanStrict
 import org.akanework.gramophone.logic.gramophoneApplication
 import org.akanework.gramophone.logic.hasAudioPermission
@@ -260,10 +261,19 @@ class MainActivity : BaseActivity() {
             handler.post { maybeReportFullyDrawn() }
     }
 
+    fun addToPlaylistDialog(item: MediaItem) = addToPlaylistDialog(listOf(item), false)
+
+    /**
+     * @param items songs to add, in the order they should end up in the playlist
+     * @param fromSelection true when called from multi-select: skip songs already in the
+     * playlist and show an "Added N songs" message afterwards
+     * @param onChosen called once the user picked a playlist (used to leave selection mode)
+     */
     @OptIn(FlowPreview::class, InternalCoroutinesApi::class)
-    fun addToPlaylistDialog(item: MediaItem) {
-        val song = Entry.ofMediaItem(item)
-        if (song == null) {
+    fun addToPlaylistDialog(items: List<MediaItem>, fromSelection: Boolean,
+                            onChosen: () -> Unit = {}) {
+        val songs = items.mapNotNull { Entry.ofMediaItem(it) }
+        if (songs.isEmpty()) {
             Toast.makeText(
                 this@MainActivity,
                 getString(R.string.edit_playlist_failed, "song == null"),
@@ -305,25 +315,30 @@ class MainActivity : BaseActivity() {
                 MaterialAlertDialogBuilder(this@MainActivity)
                     .setTitle(R.string.add_to_playlist)
                     .setIcon(R.drawable.ic_playlist_play)
-                    .setItems((playlists.map {
+                    .setItems((listOf(getString(R.string.new_playlist)) + playlists.map {
                         if (it is Favorite) getString(R.string.playlist_favourite) else
                             it.title ?: it.path?.absolutePath ?: it.id.toString()
-                    } + getString(R.string.create_playlist)).toTypedArray())
+                    }).toTypedArray())
                     { _, item ->
-                        if (playlists.size == item) {
+                        if (item == 0) {
                             PlaylistAdapter.playlistNameDialog(this@MainActivity,
                                 R.string.create_playlist, "",
                                 { ItemManipulator.getDefaultPlaylistFile(it) }) { name ->
-                                addToPlaylist(null, name, listOf(song))
+                                onChosen()
+                                addToPlaylist(null, name, songs, fromSelection,
+                                    name.nameWithoutExtension)
                             }
                             return@setItems
                         }
-                        val pl = playlists[item]
+                        val pl = playlists[item - 1]
+                        onChosen()
                         addToPlaylist(
                             ContentUris.withAppendedId(
                                 @Suppress("deprecation") MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
                                 pl.id!!
-                            ), null, listOf(song)
+                            ), null, songs, fromSelection,
+                            if (pl is Favorite) getString(R.string.playlist_favourite)
+                            else pl.title ?: pl.id.toString()
                         )
                     }
                     .setNegativeButton(android.R.string.cancel) { _, _ -> }
@@ -332,11 +347,14 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    fun addToPlaylist(uri: Uri?, name: File?, songs: List<Entry>) {
+    fun addToPlaylist(uri: Uri?, name: File?, songs: List<Entry>,
+                      fromSelection: Boolean = false, displayName: String? = null) {
         val data = Bundle().apply {
             putParcelableArrayList("Songs", ArrayList(songs))
             putParcelable("Uri", uri)
             putString("Name", name?.path)
+            putBoolean("FromSelection", fromSelection)
+            putString("DisplayName", displayName)
         }
         CoroutineScope(Dispatchers.Default).launch {
             val token = if (uri != null) {
@@ -467,8 +485,26 @@ class MainActivity : BaseActivity() {
                     uriIn) else PlaylistSerializer.Playlist.create()
                 val uri = uriIn ?: ItemManipulator.createPlaylist(this,
                     File(name!!))
+                val fromSelection = data.getBoolean("FromSelection", false)
+                // From multi-select: skip songs that are already in the playlist
+                val seen = readback.entries.map { it.preferredLocation }.toMutableSet()
+                val toAdd = if (fromSelection) songs.filter { seen.add(it.preferredLocation) }
+                    else songs
                 ItemManipulator.setPlaylistContent(this, uri, readback
-                    .copy(entries = readback.entries + songs), uriIn == null)
+                    .copy(entries = readback.entries + toAdd), uriIn == null)
+                if (fromSelection) {
+                    val skipped = songs.size - toAdd.size
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            resources.getQuantityString(R.plurals.added_to_playlist, toAdd.size,
+                                toAdd.size, data.getString("DisplayName") ?: "") +
+                                    if (skipped > 0) " " + getString(
+                                        R.string.skipped_already_in_playlist, skipped) else "",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             } catch (e: Exception) {
                 Log.e("MainActivity", Log.getThrowableString(e)!!)
                 withContext(Dispatchers.Main) {
@@ -844,6 +880,12 @@ class MainActivity : BaseActivity() {
      *   Returns a media controller.
      */
     fun getPlayer() = controllerViewModel.get()
+
+    /** Stops playback, removes the notification and closes the app (used by every Exit button). */
+    fun exitAppCompletely() {
+        getPlayer()?.exitApp()
+        finishAndRemoveTask()
+    }
 
     inline val reader
         get() = gramophoneApplication.reader
