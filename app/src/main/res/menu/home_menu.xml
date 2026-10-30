@@ -31,4 +31,8 @@
         android:icon="@drawable/ic_settings"
         android:title="@string/home_menu_settings"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/exit"
+        android:title="@string/home_menu_exit"
+        app:showAsAction="never" />
 </menu>

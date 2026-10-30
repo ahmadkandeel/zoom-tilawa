@@ -193,6 +193,7 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         const val SERVICE_QB_RENAME_QUEUE = "qb_rename"
 
         const val SERVICE_QB_AGE = "qb_age"
+        const val SERVICE_EXIT = "exit"
 
         var instanceForWidgetAndLyricsOnly: GramophonePlaybackService? = null
     }
@@ -892,6 +893,7 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         availableSessionCommands.add(SessionCommand(SERVICE_QB_UNPIN_QUEUE, Bundle.EMPTY))
         availableSessionCommands.add(SessionCommand(SERVICE_QB_RENAME_QUEUE, Bundle.EMPTY))
         availableSessionCommands.add(SessionCommand(SERVICE_QB_AGE, Bundle.EMPTY))
+        availableSessionCommands.add(SessionCommand(SERVICE_EXIT, Bundle.EMPTY))
         return builder.setAvailableSessionCommands(availableSessionCommands.build()).build()
     }
 
@@ -1319,6 +1321,12 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
 
                 SERVICE_QB_AGE -> {
                     qb.age()
+                    SessionResult(SessionResult.RESULT_SUCCESS)
+                }
+
+                SERVICE_EXIT -> {
+                    // Exit button: pause, stop the service, which also removes the notification
+                    pauseAllPlayersAndStopSelf()
                     SessionResult(SessionResult.RESULT_SUCCESS)
                 }
 

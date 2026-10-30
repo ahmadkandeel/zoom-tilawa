@@ -12,6 +12,12 @@
 
     <!-- If your language uses a latin script: use "Gramophone", please do not translate. If your language uses a different script: translate "Gramophone" into your language. -->
     <string name="app_name">Zoom Tilawa</string>
+    <!-- Title of the selection bar when songs are selected, Ex: "3 selected" -->
+    <string name="selected_count">%d selected</string>
+    <!-- Selection bar action: select every song in the list -->
+    <string name="select_all">Select all</string>
+    <!-- Menu item in home screen: stops playback and closes the app completely -->
+    <string name="home_menu_exit">Exit</string>
     <!-- Menu item in home screen -->
     <string name="home_menu_search">Search</string>
     <!-- Menu item in home screen -->

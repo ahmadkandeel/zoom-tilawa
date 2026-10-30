@@ -21,13 +21,17 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
+import android.view.Menu
+import android.view.MenuItem
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
@@ -42,6 +46,7 @@ import coil3.load
 import coil3.request.crossfade
 import coil3.request.error
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.MaterialColors
 import com.google.common.collect.Comparators
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -121,6 +126,64 @@ abstract class BaseAdapter<T : Any>(
         private set
 
     protected val prefs = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+
+    // Multi-select. Off for every list unless the adapter overrides canSelect, so the other
+    // lists behave exactly as before.
+    protected open val canSelect: Boolean
+        get() = false
+    private val selected = LinkedHashSet<T>()
+    private var actionMode: ActionMode? = null
+    private val selectionCallback = object : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            mode.menuInflater.inflate(R.menu.selection_menu, menu)
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = false
+
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            if (item.itemId != R.id.select_all) return false
+            list?.second?.let { selected.addAll(it) }
+            updateSelectionUi()
+            return true
+        }
+
+        override fun onDestroyActionMode(mode: ActionMode) {
+            actionMode = null
+            selected.clear()
+            @SuppressLint("NotifyDataSetChanged") notifyDataSetChanged()
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun updateSelectionUi() {
+        actionMode?.title = context.getString(R.string.selected_count, selected.size)
+        notifyDataSetChanged()
+    }
+
+    private fun toggleSelection(item: T, position: Int) {
+        if (!selected.remove(item)) selected.add(item)
+        if (selected.isEmpty()) {
+            actionMode?.finish()
+            return
+        }
+        if (actionMode == null) {
+            actionMode = (context as? AppCompatActivity)?.startSupportActionMode(selectionCallback)
+            if (actionMode == null) {
+                selected.clear()
+                return
+            }
+        }
+        actionMode?.title = context.getString(R.string.selected_count, selected.size)
+        notifyItemChanged(position)
+    }
+
+    // Drop selected items that are no longer in the list (e.g. the user changed the search text)
+    private fun pruneSelection() {
+        if (selected.isEmpty()) return
+        selected.retainAll((list?.second ?: emptyList()).toSet())
+        if (selected.isEmpty()) actionMode?.finish() else updateSelectionUi()
+    }
 
     override var layoutType: LayoutType? = null
         @SuppressLint("NotifyDataSetChanged")
@@ -209,6 +272,7 @@ abstract class BaseAdapter<T : Any>(
         val onListLoaded =
             { it: Pair<List<T>, List<T>>, diff: DiffUtil.DiffResult?, sizeChanged: Boolean ->
                 list = it
+                pruneSelection()
                 if (diff != null)
                     diff.dispatchUpdatesTo(this@BaseAdapter)
                 else
@@ -303,6 +367,7 @@ abstract class BaseAdapter<T : Any>(
 
     override fun onDetachedFromRecyclerView(recyclerView: MyRecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
+        actionMode?.finish()
         this.recyclerView = null
     }
 
@@ -367,8 +432,29 @@ abstract class BaseAdapter<T : Any>(
         }
         holder.itemView.setOnClickListener {
             val pos = holder.bindingAdapterPosition
-            if (pos != RecyclerView.NO_POSITION && pos < getItemCount())
-                onClick(item, pos)
+            if (pos != RecyclerView.NO_POSITION && pos < getItemCount()) {
+                if (canSelect && actionMode != null)
+                    toggleSelection(item, pos)
+                else
+                    onClick(item, pos)
+            }
+        }
+        if (canSelect) {
+            holder.itemView.setOnLongClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION && pos < getItemCount())
+                    toggleSelection(item, pos)
+                true
+            }
+            holder.itemView.setBackgroundColor(
+                if (selected.contains(item))
+                    MaterialColors.getColor(
+                        holder.itemView,
+                        com.google.android.material.R.attr.colorSecondaryContainer,
+                        Color.LTGRAY
+                    )
+                else Color.TRANSPARENT
+            )
         }
         if (hasMenu) {
             holder.moreButton?.setOnClickListener {

@@ -75,6 +75,7 @@ import com.google.android.material.appbar.CollapsingToolbarLayout
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.akanework.gramophone.BuildConfig
 import org.akanework.gramophone.R
+import org.akanework.gramophone.logic.GramophonePlaybackService.Companion.SERVICE_EXIT
 import org.akanework.gramophone.logic.GramophonePlaybackService.Companion.SERVICE_GET_AUDIO_FORMAT
 import org.akanework.gramophone.logic.GramophonePlaybackService.Companion.SERVICE_GET_LYRICS
 import org.akanework.gramophone.logic.GramophonePlaybackService.Companion.SERVICE_QB_AGE
@@ -293,6 +294,10 @@ fun MediaController.getTimer(): Pair<Int?, Boolean> =
             getBoolean("pauseOnEnd")
         else throw IllegalArgumentException("expected pauseOnEnd to be set"))
     }
+
+fun MediaController.exitApp() {
+    sendCustomCommand(SessionCommand(SERVICE_EXIT, Bundle.EMPTY), Bundle.EMPTY)
+}
 
 fun MediaController.setTimer(value: Int, waitUntilSongEnd: Boolean) {
     sendCustomCommand(
