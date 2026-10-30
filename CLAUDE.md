@@ -29,8 +29,8 @@ Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on 
 
 ## Phases
 0-2. DONE. Setup (name, app ID, APK build), speed dialog, library/search/selection/exit menu item.
-3. Easy playlists: Exit button on player screen + "Add to playlist" from selection (in progress).
-4. Resume position per file + show current speed on the player screen.
+3. DONE. Easy playlists: Exit button on player screen + "Add to playlist" from selection.
+4. IN PROGRESS. Resume position per file + show current speed on the player screen.
 5. Playlist management: rename, delete, reorder, remove a track.
 6. A-B repeat loop on a track (riskiest: touches player timing).
 7. Bookmarks inside a track, with optional note.
