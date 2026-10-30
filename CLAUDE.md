@@ -1,7 +1,7 @@
 # Zoom Tilawa — Project Brief
 
 Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on
-fast listening: playback speed 2x/3x/4x/5x. Audio only.
+fast listening: playback speed 1x/2x/3x/4x/5x. Audio only.
 
 ## Rules (non-negotiable)
 - No ads, no analytics, no trackers. Do not add the INTERNET permission.
@@ -14,7 +14,7 @@ fast listening: playback speed 2x/3x/4x/5x. Audio only.
 - The user is NOT technical: explain everything in plain language, give exact copy-paste commands, no jargon.
 
 ## Feature decisions
-- Speed is GLOBAL: choose once (2/3/4/5x), it persists across tracks AND app restarts.
+- Speed is GLOBAL: choose once (1/2/3/4/5x), it persists across tracks AND app restarts.
 - Speed buttons live on the Now Playing screen.
 - Library views: Folders, All tracks, Playlists. Fast search.
 - Playlists: multi-select tracks -> add to new or existing playlist. Create playlist from a whole folder.
@@ -29,3 +29,4 @@ fast listening: playback speed 2x/3x/4x/5x. Audio only.
 ## After each phase
 Tell me in 3 lines: what changed, what to test on my phone, any risk.
 Mention approximate token usage so I can track the $20 budget.
+- Default speed on first launch is 1x (normal). The 1x button must always be available to return to normal speed.
