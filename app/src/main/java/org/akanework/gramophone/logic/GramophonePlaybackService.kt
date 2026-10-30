@@ -463,6 +463,11 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         player.exoPlayer.addAnalyticsListener(afFormatTracker)
         player.exoPlayer.addAnalyticsListener(this)
         player.exoPlayer.setShuffleOrder(CircularShuffleOrder(player, 0, 0, Random.nextLong()))
+        // Zoom Tilawa: tempo and pitch are global and survive restarts (default 100%/100%)
+        player.exoPlayer.playbackParameters = PlaybackParameters(
+            prefs.getFloat("playback_tempo", 1f).coerceIn(0.25f, 5f),
+            prefs.getFloat("playback_pitch", 1f).coerceIn(0.5f, 2f)
+        )
         lastPlayedManager = LastPlayedManager(this, player)
         lastPlayedManager.allowSavingState = false
         libraryTreeLoader = LibraryTreeLoader(
@@ -1557,6 +1562,10 @@ class GramophonePlaybackService : MediaLibraryService(), MediaSessionService.Lis
         playbackParameters: PlaybackParameters
     ) {
         scheduleSendingLyrics(false) // if speed changes
+        prefs.edit {
+            putFloat("playback_tempo", playbackParameters.speed)
+            putFloat("playback_pitch", playbackParameters.pitch)
+        }
     }
 
     override fun onPlayerError(error: PlaybackException) {

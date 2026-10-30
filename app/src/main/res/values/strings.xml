@@ -330,6 +330,10 @@
     <string name="tempo_pitch_value">%s: %.2fx</string>
     <!-- Used in playback speed dialog to ensure tempo and pitch stay the same, check box label -->
     <string name="lock_tempo_pitch">Lock tempo and pitch</string>
+    <!-- Hint under the percent box in the playback speed dialog when typed number is out of range -->
+    <string name="tempo_pitch_percent_hint">Enter a number from %1$d to %2$d</string>
+    <!-- Quick tempo button in playback speed dialog, Ex: "2x" -->
+    <string name="tempo_quick_button">%dx</string>
     <!-- Used in playback speed to restore default tempo and pitch -->
     <string name="reset">Reset</string>
     <!-- Accessibility tooltip for queue button showing which songs are playing next and before -->

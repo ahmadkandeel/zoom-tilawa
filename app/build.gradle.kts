@@ -39,6 +39,13 @@ android {
     compileSdk = 37
 
     signingConfigs {
+        // Fixed, public debug key (not a secret) so new debug APKs install over old ones.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             if (resolveProperties("AKANE_RELEASE_KEY_ALIAS") != null) {
                 storeFile = file(resolveProperties("AKANE_RELEASE_STORE_FILE")!!)

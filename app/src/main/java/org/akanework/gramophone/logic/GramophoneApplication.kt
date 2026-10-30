@@ -134,8 +134,7 @@ class GramophoneApplication : Application(), SingletonImageLoader.Factory,
                             it.permitDiskReads()
                         else it
                     }
-                    .penaltyLog()
-                    .penaltyDialog()
+                    .penaltyLog() // log only; the popup dialog was removed (debug builds only)
                     .build()
             )
             StrictMode.setVmPolicy(

@@ -31,12 +31,17 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.text.Editable
+import android.text.InputFilter
+import android.text.InputType
+import android.text.TextWatcher
 import android.text.format.DateFormat
 import android.util.AttributeSet
 import android.view.AbsSavedState
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.view.ViewGroup
 import android.view.ViewPropertyAnimator
 import android.view.WindowInsets
@@ -98,6 +103,8 @@ import com.google.android.material.color.DynamicColorsOptions
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.common.util.concurrent.Futures
@@ -716,19 +723,23 @@ class FullBottomSheet
     private fun showPlaybackSpeedDialog() {
         val context = wrappedContext ?: context
         val initialPlaybackParameters = instance!!.playbackParameters
-        val wantsToBeLocked = prefs.getBoolean("playback_tempo_pitch_locked", true)
-        val isLocked =
-            initialPlaybackParameters.pitch == initialPlaybackParameters.speed && wantsToBeLocked
+        // Tempo and pitch are independent by default; locking is opt-in.
+        val wantsToBeLocked = prefs.getBoolean("playback_tempo_pitch_locked", false)
+        val isLocked = wantsToBeLocked &&
+                initialPlaybackParameters.pitch == initialPlaybackParameters.speed.coerceIn(0.5f, 2.0f)
+
+        fun round2(v: Float) = Math.round(v * 100) / 100f
+        fun matchWidth() = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
 
         val tempoSlider = Slider(context).apply {
             valueFrom = 0.25f
-            valueTo = 4.0f
+            valueTo = 5.0f
             stepSize = 0.01f
-            value = initialPlaybackParameters.speed.coerceIn(0.25f, 4.0f)
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { layoutParams = it }
+            value = round2(initialPlaybackParameters.speed).coerceIn(0.25f, 5.0f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
         val tempoText = TextView(context).apply {
@@ -739,21 +750,15 @@ class FullBottomSheet
             )
             gravity = Gravity.CENTER
             textSize = 16f
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { layoutParams = it }
+            layoutParams = matchWidth()
         }
 
         val pitchSlider = Slider(context).apply {
-            valueFrom = 0.25f
-            valueTo = 4.0f
+            valueFrom = 0.5f
+            valueTo = 2.0f
             stepSize = 0.01f
-            value = initialPlaybackParameters.pitch.coerceIn(0.25f, 4.0f)
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { layoutParams = it }
+            value = round2(initialPlaybackParameters.pitch).coerceIn(0.5f, 2.0f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
         val pitchText = TextView(context).apply {
@@ -764,23 +769,124 @@ class FullBottomSheet
             )
             gravity = Gravity.CENTER
             textSize = 16f
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { layoutParams = it }
+            layoutParams = matchWidth()
         }
 
         val lockCheckbox = MaterialCheckBox(context).apply {
             text = context.getString(R.string.lock_tempo_pitch)
             isChecked = isLocked
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { layoutParams = it }
+            layoutParams = matchWidth()
         }
 
-        pitchSlider.isEnabled = !isLocked
-        pitchText.isEnabled = !isLocked
+        fun pushParams() {
+            instance?.playbackParameters = PlaybackParameters(tempoSlider.value, pitchSlider.value)
+        }
+
+        // Text field (percent) kept in sync with a slider. Invalid input is ignored and
+        // shows a hint; it never reaches the player.
+        var updatingField = false
+        fun percentField(
+            slider: Slider, minPercent: Int, maxPercent: Int, onValidValue: (Float) -> Unit
+        ): Pair<TextInputLayout, TextInputEditText> {
+            val layout = TextInputLayout(context).apply {
+                suffixText = "%"
+                layoutParams = LinearLayout.LayoutParams(
+                    96.dpToPx(context), LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            val field = TextInputEditText(layout.context).apply {
+                inputType = InputType.TYPE_CLASS_NUMBER
+                imeOptions = EditorInfo.IME_ACTION_DONE
+                filters = arrayOf(InputFilter.LengthFilter(3))
+                setText(Math.round(slider.value * 100).toString())
+            }
+            layout.addView(field)
+            fun showSliderValue() {
+                val t = Math.round(slider.value * 100).toString()
+                if (field.text?.toString() != t) {
+                    updatingField = true
+                    field.setText(t)
+                    updatingField = false
+                }
+            }
+            slider.addOnChangeListener { _, _, _ ->
+                layout.error = null
+                showSliderValue()
+            }
+            field.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+                override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    if (updatingField) return
+                    val n = s?.toString()?.trim()?.toIntOrNull()
+                    if (n == null || n < minPercent || n > maxPercent) {
+                        layout.error = context.getString(
+                            R.string.tempo_pitch_percent_hint, minPercent, maxPercent
+                        )
+                    } else {
+                        layout.error = null
+                        onValidValue(n / 100f)
+                    }
+                }
+            })
+            field.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus && layout.error != null) {
+                    layout.error = null
+                    showSliderValue() // drop the invalid text, go back to the real value
+                }
+            }
+            return layout to field
+        }
+
+        // Tempo changes can drag pitch along, but only when the user ticked the lock box.
+        fun setTempo(v: Float) {
+            tempoSlider.value = v
+            if (lockCheckbox.isChecked) pitchSlider.value = v.coerceIn(0.5f, 2.0f)
+            pushParams()
+        }
+
+        val (tempoFieldLayout, _) = percentField(tempoSlider, 25, 500) { setTempo(it) }
+        val (pitchFieldLayout, pitchField) = percentField(pitchSlider, 50, 200) {
+            pitchSlider.value = it
+            pushParams()
+        }
+
+        val quickButtons = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = matchWidth()
+            for (x in 1..5) {
+                addView(MaterialButton(
+                    context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+                ).apply {
+                    text = context.getString(R.string.tempo_quick_button, x)
+                    insetTop = 0
+                    insetBottom = 0
+                    minimumWidth = 0
+                    minWidth = 0
+                    setPadding(0, 0, 0, 0)
+                    layoutParams = LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+                    ).also { it.marginEnd = if (x < 5) 4.dpToPx(context) else 0 }
+                    setOnClickListener { setTempo(x.toFloat()) }
+                })
+            }
+        }
+
+        fun sliderRow(slider: Slider, fieldLayout: TextInputLayout) = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = matchWidth()
+            addView(slider)
+            addView(fieldLayout)
+        }
+
+        fun updatePitchEnabled(locked: Boolean) {
+            pitchSlider.isEnabled = !locked
+            pitchText.isEnabled = !locked
+            pitchFieldLayout.isEnabled = !locked
+            pitchField.isEnabled = !locked
+        }
+        updatePitchEnabled(isLocked)
 
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -789,9 +895,10 @@ class FullBottomSheet
                 48.dpToPx(context), 0
             )
             addView(tempoText)
-            addView(tempoSlider)
+            addView(sliderRow(tempoSlider, tempoFieldLayout))
+            addView(quickButtons)
             addView(pitchText)
-            addView(pitchSlider)
+            addView(sliderRow(pitchSlider, pitchFieldLayout))
             addView(lockCheckbox)
         }
 
@@ -803,10 +910,9 @@ class FullBottomSheet
             )
             if (fromUser) {
                 if (lockCheckbox.isChecked) {
-                    pitchSlider.value = value
+                    pitchSlider.value = value.coerceIn(0.5f, 2.0f)
                 }
-                instance?.playbackParameters =
-                    PlaybackParameters(tempoSlider.value, pitchSlider.value)
+                pushParams()
             }
         }
 
@@ -817,18 +923,15 @@ class FullBottomSheet
                 value
             )
             if (fromUser) {
-                instance?.playbackParameters =
-                    PlaybackParameters(tempoSlider.value, pitchSlider.value)
+                pushParams()
             }
         }
 
         lockCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            pitchSlider.isEnabled = !isChecked
-            pitchText.isEnabled = !isChecked
+            updatePitchEnabled(isChecked)
             if (isChecked) {
-                pitchSlider.value = tempoSlider.value
-                instance?.playbackParameters =
-                    PlaybackParameters(tempoSlider.value, pitchSlider.value)
+                pitchSlider.value = tempoSlider.value.coerceIn(0.5f, 2.0f)
+                pushParams()
             }
         }
 
@@ -850,7 +953,7 @@ class FullBottomSheet
             }
             .setNeutralButton(R.string.reset) { _, _ ->
                 prefs.edit {
-                    putBoolean("playback_tempo_pitch_locked", true)
+                    putBoolean("playback_tempo_pitch_locked", false)
                 }
                 instance?.playbackParameters = PlaybackParameters(1f, 1f)
             }
