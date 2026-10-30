@@ -45,4 +45,4 @@ Working rule for every phase: one branch, one PR, GitHub Actions must pass, wait
 Tell me in 3 lines: what changed, what to test on my phone, any risk. Mention approximate token usage so I can track my $20 budget.
 
 ## BACKLOG: feature ideas from research, waiting for my choice
-(empty for now)
+- LeakCanary (debug builds only) reported 1 leak, UniGestureDetector, seen after using the Exit button. Debug-only, not blocking. Investigate during Phase 10 cleanup; check whether it also exists in upstream Gramophone.
