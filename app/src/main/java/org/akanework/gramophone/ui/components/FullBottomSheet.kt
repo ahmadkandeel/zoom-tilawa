@@ -597,6 +597,7 @@ class FullBottomSheet
             onRepeatModeChanged(instance?.repeatMode ?: Player.REPEAT_MODE_OFF)
             onShuffleModeEnabledChanged(instance?.shuffleModeEnabled == true)
             onPlaybackStateChanged(instance?.playbackState ?: Player.STATE_IDLE)
+            onPlaybackParametersChanged(instance?.playbackParameters ?: PlaybackParameters.DEFAULT)
             onMediaItemTransition(
                 instance?.currentMediaItem,
                 Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
@@ -1361,6 +1362,7 @@ class FullBottomSheet
                         ColorStateList.valueOf(progressColor)
                     bottomSheetPlaybackSpeedButton.iconTint =
                         ColorStateList.valueOf(progressColor)
+                    bottomSheetPlaybackSpeedButton.setTextColor(progressColor)
                     bottomSheetPlaylistButton.iconTint =
                         ColorStateList.valueOf(progressColor)
                     bottomSheetLyricButton.iconTint =
@@ -1488,6 +1490,7 @@ class FullBottomSheet
                 ColorStateList.valueOf(colorOnSurface)
             bottomSheetPlaybackSpeedButton.iconTint =
                 ColorStateList.valueOf(colorOnSurface)
+            bottomSheetPlaybackSpeedButton.setTextColor(colorOnSurface)
             bottomSheetPlaylistButton.iconTint =
                 ColorStateList.valueOf(colorOnSurface)
             bottomSheetShuffleButton.iconTint =
@@ -1635,6 +1638,13 @@ class FullBottomSheet
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         onPlaybackStateChanged(instance?.playbackState ?: Player.STATE_IDLE)
+    }
+
+    // Shows the current tempo (not pitch) on the speed button, ex: "3x" or "2.5x"
+    override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+        val tempo = Math.round(playbackParameters.speed * 100) / 100f
+        bottomSheetPlaybackSpeedButton.text =
+            (if (tempo % 1f == 0f) tempo.toInt().toString() else tempo.toString()) + "x"
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
