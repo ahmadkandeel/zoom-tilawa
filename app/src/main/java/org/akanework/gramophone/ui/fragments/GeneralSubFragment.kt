@@ -177,7 +177,9 @@ class GeneralSubFragment : BaseFragment(true) {
                 sharedTitle,
                 itemList,
                 rawOrderExposed = rawOrderExposed,
-                isSubFragment = itemType
+                isSubFragment = itemType,
+                removableFromPlaylistId = if (itemType == R.id.playlist &&
+                    arguments?.getString("Class") == Playlist::class.java.name) id else null
             )
 
         recyclerView.enableEdgeToEdgePaddingListener()

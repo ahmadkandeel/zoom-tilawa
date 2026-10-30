@@ -72,7 +72,9 @@ class SongAdapter(
     allowDiffUtils: Boolean = false,
     rawOrderExposed: Sorter.Type? = if (isSubFragment == null) Sorter.Type.ByTitleAscending else null,
     val folder: Boolean = false,
-    fallbackContext: AppCompatActivity? = null
+    fallbackContext: AppCompatActivity? = null,
+    // set when this list is the content of a user playlist: allows removing selected songs
+    val removableFromPlaylistId: Long? = null
 ) : BaseAdapter<MediaItem>
     (
     fragment,
@@ -99,6 +101,24 @@ class SongAdapter(
     // Multi-select everywhere songs are listed, except in the system file picker
     override val canSelect: Boolean
         get() = isSubFragment != R.id.songs
+
+    override val canRemoveSelection: Boolean
+        get() = removableFromPlaylistId != null
+
+    override fun onRemoveSelection(items: List<MediaItem>, done: () -> Unit) {
+        val playlistId = removableFromPlaylistId ?: return
+        val name = runBlocking { queueTitle?.first() } ?: ""
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.remove_from_playlist)
+            .setMessage(context.resources.getQuantityString(
+                R.plurals.confirm_remove_from_playlist, items.size, items.size, name))
+            .setPositiveButton(R.string.remove) { _, _ ->
+                done()
+                mainActivity.removeFromPlaylist(playlistId, items, name)
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> }
+            .show()
+    }
 
     override fun onAddSelectionToPlaylist(items: List<MediaItem>, done: () -> Unit) {
         mainActivity.addToPlaylistDialog(items, true, done)

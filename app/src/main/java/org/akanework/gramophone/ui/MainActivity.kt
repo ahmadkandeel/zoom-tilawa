@@ -347,9 +347,23 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    /** Removes [songs] from the existing playlist with id [playlistId] (all copies of them). */
+    fun removeFromPlaylist(playlistId: Long, songs: List<MediaItem>, displayName: String) {
+        val entries = songs.mapNotNull { Entry.ofMediaItem(it) }
+        if (entries.isEmpty()) return
+        addToPlaylist(
+            ContentUris.withAppendedId(
+                @Suppress("deprecation") MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+                playlistId
+            ), null, entries, false, displayName, remove = true
+        )
+    }
+
     fun addToPlaylist(uri: Uri?, name: File?, songs: List<Entry>,
-                      fromSelection: Boolean = false, displayName: String? = null) {
+                      fromSelection: Boolean = false, displayName: String? = null,
+                      remove: Boolean = false) {
         val data = Bundle().apply {
+            putBoolean("Remove", remove)
             putParcelableArrayList("Songs", ArrayList(songs))
             putParcelable("Uri", uri)
             putString("Name", name?.path)
@@ -485,6 +499,23 @@ class MainActivity : BaseActivity() {
                     uriIn) else PlaylistSerializer.Playlist.create()
                 val uri = uriIn ?: ItemManipulator.createPlaylist(this,
                     File(name!!))
+                if (data.getBoolean("Remove", false)) {
+                    // Remove mode: drop every entry that matches one of the given songs
+                    val drop = songs.map { it.preferredLocation }.toSet()
+                    val kept = readback.entries.filterNot { it.preferredLocation in drop }
+                    val removed = readback.entries.size - kept.size
+                    ItemManipulator.setPlaylistContent(this, uri, readback
+                        .copy(entries = kept), false)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            resources.getQuantityString(R.plurals.removed_from_playlist, removed,
+                                removed, data.getString("DisplayName") ?: ""),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    return
+                }
                 val fromSelection = data.getBoolean("FromSelection", false)
                 // From multi-select: skip songs that are already in the playlist
                 val seen = readback.entries.map { it.preferredLocation }.toMutableSet()
