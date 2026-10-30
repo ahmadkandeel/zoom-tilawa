@@ -96,6 +96,10 @@ class SongAdapter(
         lateInit()
     }
 
+    // Multi-select everywhere songs are listed, except in the system file picker
+    override val canSelect: Boolean
+        get() = isSubFragment != R.id.songs
+
     fun getSongList() = list?.second ?: emptyList()
 
     fun getActivity() = mainActivity
