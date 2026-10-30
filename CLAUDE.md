@@ -30,16 +30,18 @@ Fork of Gramophone (GPLv3). An ad-free, offline Android audio player focused on 
 ## Phases
 0-2. DONE. Setup (name, app ID, APK build), speed dialog, library/search/selection/exit menu item.
 3. DONE. Easy playlists: Exit button on player screen + "Add to playlist" from selection.
-4. IN PROGRESS. Resume position per file + show current speed on the player screen.
-5. Playlist management: rename, delete, reorder, remove a track.
-6. A-B repeat loop on a track (riskiest: touches player timing).
-7. Bookmarks inside a track, with optional note.
-8. Smart grouping (artist/reciter/name); never assume tags exist, file name is the fallback.
-9. Optional skip-silence (OFF by default; recitation pauses matter) + verify the existing sleep timer works.
-10. Cleanup, permissions audit, icon, release v0.1.
+4. DONE. Resume position per file + show current speed on the player screen.
+5. IN PROGRESS. Playlist management: rename, delete, reorder, remove a track. Estimated time: ~45 min.
+6. A-B repeat loop on a track (riskiest: touches player timing). Estimated time: 1-2 hours.
+7. Bookmarks inside a track, with optional note. Estimated time: ~45 min.
+8. Smart grouping (artist/reciter/name); never assume tags exist, file name is the fallback. Estimated time: ~1 hour (depends on my files).
+9. Optional skip-silence (OFF by default; recitation pauses matter) + verify the existing sleep timer works. Estimated time: ~30 min.
+10. Cleanup, permissions audit, icon, release v0.1. Estimated time: ~45 min.
 After v0.1: appear in Android's Share / Open-with menu for audio.
 
 Working rule for every phase: one branch, one PR, GitHub Actions must pass, wait for my approval, smallest change that works.
+No calendar dates in the roadmap, only time estimates. If a phase takes more than twice its estimate, say why in the final report.
+(Real pace so far: a phase takes about 30-60 minutes, mostly waiting for the GitHub build and my phone test.)
 
 ## After each phase
 Tell me in 3 lines: what changed, what to test on my phone, any risk. Mention approximate token usage so I can track my $20 budget.
