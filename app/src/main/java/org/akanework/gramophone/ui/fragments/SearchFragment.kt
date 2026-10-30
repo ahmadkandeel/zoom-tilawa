@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.map
 import org.akanework.gramophone.R
 import org.akanework.gramophone.logic.closeKeyboard
 import org.akanework.gramophone.logic.enableEdgeToEdgePaddingListener
+import org.akanework.gramophone.logic.getFile
 import org.akanework.gramophone.logic.showKeyboard
 import org.akanework.gramophone.logic.ui.MyRecyclerView
 import org.akanework.gramophone.ui.adapters.SongAdapter
@@ -68,17 +69,22 @@ class SearchFragment : BaseFragment(true) {
         val songAdapter =
             SongAdapter(
                 this, qTitle, mainActivity.reader.songListFlow.combine(searchTextFlow.map {
-                    it.trim()
+                    normalizeForSearch(it.trim())
                 }) { list, text ->
                     list.filter {
                         // TODO sort results by match quality? (using raw=natural order)
-                        val isMatchingTitle =
-                            it.mediaMetadata.title?.contains(text, true) == true
-                        val isMatchingAlbum =
-                            it.mediaMetadata.albumTitle?.contains(text, true) == true
-                        val isMatchingArtist =
-                            it.mediaMetadata.artist?.contains(text, true) == true
-                        isMatchingTitle || isMatchingAlbum || isMatchingArtist
+                        // Search tags AND file name AND folder name, so untagged files are found.
+                        val file = it.getFile()
+                        listOf(
+                            it.mediaMetadata.title,
+                            it.mediaMetadata.artist,
+                            it.mediaMetadata.albumTitle,
+                            file?.name,
+                            file?.parentFile?.name
+                        ).any { field ->
+                            field != null && normalizeForSearch(field.toString())
+                                .contains(text, true)
+                        }
                     }
                 },
                 isSubFragment = R.id.search, allowDiffUtils = true,
@@ -138,3 +144,8 @@ class SearchFragment : BaseFragment(true) {
     }
 
 }
+
+/** Lowercase-insensitive search helper: removes Arabic diacritics/tatweel and unifies alef forms. */
+private val arabicDiacritics = Regex("[\u064B-\u065F\u0670\u0640]")
+private fun normalizeForSearch(text: String) = arabicDiacritics.replace(text, "")
+    .replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا')
