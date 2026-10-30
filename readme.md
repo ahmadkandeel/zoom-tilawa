@@ -1,4 +1,8 @@
-# Gramophone
+# Zoom Tilawa
+
+Zoom Tilawa is a fork of [Gramophone](https://github.com/FoedusProgramme/Gramophone) by the Gramophone developers, licensed under the GNU GPLv3 (see [LICENSE](./LICENSE)). It is an ad-free, offline audio player with fast-listening speeds. No ads, no analytics, no trackers.
+
+# Gramophone (original project readme)
 ![GitHub](https://img.shields.io/github/license/FoedusProgramme/Gramophone?style=flat-square&logoColor=white&labelColor=black&color=white)
 ![GitHub tag (with filter)](https://img.shields.io/github/v/tag/FoedusProgramme/Gramophone?style=flat-square&logoColor=white&labelColor=black&color=white)
 [![Static Badge](https://img.shields.io/badge/Telegram-Content?style=flat-square&logo=telegram&logoColor=black&color=white)](https://t.me/FoedusProgramme)
